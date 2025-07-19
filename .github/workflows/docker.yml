@@ -6,15 +6,21 @@ on:
   push:
     branches:
       - 8.4-apache
+  # 
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
   build_docker_images:
     # Job name that shows in the GitHub UI
     name: 'Build Docker Images'
     # Runner to use
-    runs-on: self-hosted
-    permissions: write-all
-
+    runs-on: ubuntu-latest
+    # Permissions for the job
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
 
     steps:
       - name: 'Checkout'
