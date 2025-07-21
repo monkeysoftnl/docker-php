@@ -24,6 +24,12 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v4
 
+      - name: 'Login to DockerHub Container Registry'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: 'Login to GitHub Container Registry'
         uses: docker/login-action@v3
         with:
@@ -45,4 +51,5 @@ jobs:
           platforms: linux/arm64, linux/amd64
           push: true
           tags: |
+            monkeysoft/php:latest-apache
             ghcr.io/monkeysoftnl/docker-php:latest-apache
