@@ -1,14 +1,12 @@
 name: Build PHP Base Image
 
 on:
-  # Trigger the action manually from the UI
   workflow_dispatch:
   push:
     branches:
       - 8.4-apache
-  # 
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "30 0 * * *"
 
 jobs:
   build_docker_images:
