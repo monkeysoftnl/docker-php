@@ -1,12 +1,10 @@
 name: Build PHP Base Image
 
 on:
-  # Trigger the action manually from the UI
   workflow_dispatch:
   push:
     branches:
-      - 8.4-apache
-  # 
+      - main
   schedule:
     - cron: "0 0 * * *"
 
@@ -47,4 +45,4 @@ jobs:
           platforms: linux/arm64, linux/amd64
           push: true
           tags: |
-            ghcr.io/monkeysoftnl/docker-php:8.4-apache
+            ghcr.io/monkeysoftnl/docker-php:latest-apache
