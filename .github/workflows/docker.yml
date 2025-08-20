@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - 8.4-apache
+      - 8.4-fpm
   schedule:
     - cron: "30 0 * * *"
 
@@ -51,5 +51,5 @@ jobs:
           platforms: linux/arm64, linux/amd64
           push: true
           tags: |
-            monkeysoft/php:8.4-apache
-            ghcr.io/monkeysoftnl/docker-php:8.4-apache
+            monkeysoft/php:8.4-fpm
+            ghcr.io/monkeysoftnl/docker-php:8.4-fpm
