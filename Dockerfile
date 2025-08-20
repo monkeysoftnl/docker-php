@@ -4,9 +4,9 @@ COPY ./.docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install tree nano libzip-dev libwebp-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev zlib1g-dev libicu-dev -y
-RUN apt-get install npm -y
+RUN apk update
+RUN apk add --no-cache tree nano libzip-dev freetype-dev libwebp-dev libjpeg-turbo-dev libpng-dev zlib-dev icu-dev
+RUN apk add --no-cache npm
 
 RUN docker-php-ext-install pdo_mysql \
   && docker-php-ext-install mysqli \
