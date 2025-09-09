@@ -51,5 +51,5 @@ jobs:
           platforms: linux/arm64, linux/amd64
           push: true
           tags: |
-            monkeysoft/php:latest-apache
-            ghcr.io/monkeysoftnl/docker-php:latest-apache
+            monkeysoft/php:8.4-nginx
+            ghcr.io/monkeysoftnl/docker-php:8.4-nginx

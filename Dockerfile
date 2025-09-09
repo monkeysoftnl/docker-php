@@ -1,29 +1,89 @@
-FROM php:8.4-apache
+FROM php:8.4-alpine AS builder
 
-COPY ./.docker/apache/000-default.conf /etc/apache2/sites-available/000-default.conf
-COPY ./.docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
+# Install build dependencies
+RUN apk add --no-cache $PHPIZE_DEPS \
+    imagemagick-dev icu-dev zlib-dev jpeg-dev libpng-dev libzip-dev postgresql-dev libgomp linux-headers
 
+# Configure and install PHP extensions
+RUN docker-php-ext-configure gd --with-jpeg
+RUN docker-php-ext-install intl pcntl gd exif zip mysqli pgsql pdo pdo_mysql pdo_pgsql bcmath opcache
+
+# Install xdebug extension
+RUN pecl install xdebug; \
+    docker-php-ext-enable xdebug; \
+    echo "xdebug.mode=coverage" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini;
+
+# Install imagick extension (workaround)
+ARG IMAGICK_VERSION=3.8.0
+#    && pecl install imagick-"$IMAGICK_VERSION" \
+#    && docker-php-ext-enable imagick \
+#    && apk del .imagick-deps
+RUN curl -L -o /tmp/imagick.tar.gz https://github.com/Imagick/imagick/archive/tags/${IMAGICK_VERSION}.tar.gz \
+    && tar --strip-components=1 -xf /tmp/imagick.tar.gz \
+    && sed -i 's/php_strtolower/zend_str_tolower/g' imagick.c \
+    && phpize \
+    && ./configure \
+    && make \
+    && make install \
+    && echo "extension=imagick.so" > /usr/local/etc/php/conf.d/ext-imagick.ini
+
+# Clean up build dependencies
+RUN apk del $PHPIZE_DEPS imagemagick-dev icu-dev zlib-dev jpeg-dev libpng-dev libzip-dev postgresql-dev libgomp 
+
+FROM php:8.4-alpine
+LABEL Maintainer="Stephan Eizinga <stephan@monkeysoft.nl"
+LABEL Description="Docker image for running Nginx and PHP-FPM 8.4 on Alpine Linux"
+
+# Setup document root
+WORKDIR /var/www/html
+
+# Install packages and remove default server definition
+RUN apk add --no-cache \
+  curl \
+  nginx \
+  supervisor
+
+# Copy only the necessary files from the builder stage
+COPY --from=builder /usr/local/lib/php/extensions /usr/local/lib/php/extensions
+COPY --from=builder /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
+
+# Install additional tools and required libraries
+RUN apk add --no-cache libpng libpq zip jpeg libzip imagemagick \
+    git curl sqlite nodejs npm nano ncdu openssh-client
+
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
-RUN apt-get update -y && apt-get upgrade -y
-RUN apt-get install libapache2-mod-xsendfile -y && a2enmod xsendfile
-RUN a2enmod rewrite
-RUN apt-get install tree nano libzip-dev libwebp-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev zlib1g-dev libicu-dev -y
-RUN apt-get install npm -y
+# RUN ln -s /usr/bin/php84 /usr/bin/php
 
-RUN docker-php-ext-install pdo_mysql \
-  && docker-php-ext-install mysqli \
-  && docker-php-ext-install zip \
-  && docker-php-ext-install exif \
-  && docker-php-ext-install gd \
-  && docker-php-ext-install bcmath \
-  && docker-php-ext-install intl \
-  && docker-php-ext-install pcntl
+# Configure nginx - http
+COPY .docker/nginx/nginx.conf /etc/nginx/nginx.conf
+# Configure nginx - default server
+COPY .docker/nginx/conf.d /etc/nginx/conf.d/
 
-# Set the correct permissions for the application files
-RUN chown -R www-data:www-data /var/www
+# Configure PHP-FPM
+ENV PHP_INI_DIR=/etc/php84
+COPY .docker/php/fpm-pool.conf ${PHP_INI_DIR}/php-fpm.d/www.conf
+COPY .docker/php/local.ini ${PHP_INI_DIR}/conf.d/local.ini
 
-# Set Default User for Apache
-USER www-data
+# Configure supervisord
+COPY .docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Make sure files/folders needed by the processes are accessable when they run under the nobody user
+RUN chown -R nobody:nobody /var/www/html /run /var/lib/nginx /var/log/nginx
+
+# Switch to use a non-root user from here on
+USER nobody
+
+# Add application
+# COPY --chown=nobody src/ /var/www/html/
+
+# Expose the port nginx is reachable on
+EXPOSE 80
+
+# Let supervisord start nginx & php-fpm
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
+# Configure a healthcheck to validate that everything is up&running
+HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:8080/fpm-ping || exit 1
