@@ -1,4 +1,4 @@
-FROM php:8.4-alpine AS builder
+FROM php:8.4-fpm-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache $PHPIZE_DEPS \
@@ -30,7 +30,7 @@ RUN curl -L -o /tmp/imagick.tar.gz https://github.com/Imagick/imagick/archive/ta
 # Clean up build dependencies
 RUN apk del $PHPIZE_DEPS imagemagick-dev icu-dev zlib-dev jpeg-dev libpng-dev libzip-dev postgresql-dev libgomp 
 
-FROM php:8.4-alpine
+FROM php:8.4-fpm-alpine
 LABEL Maintainer="Stephan Eizinga <stephan@monkeysoft.nl"
 LABEL Description="Docker image for running Nginx and PHP-FPM 8.4 on Alpine Linux"
 
