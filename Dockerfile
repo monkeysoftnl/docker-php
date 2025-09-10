@@ -8,11 +8,6 @@ RUN apk add --no-cache $PHPIZE_DEPS \
 RUN docker-php-ext-configure gd --with-jpeg
 RUN docker-php-ext-install intl pcntl gd exif zip mysqli pgsql pdo pdo_mysql pdo_pgsql bcmath opcache
 
-# Install xdebug extension
-RUN pecl install xdebug; \
-    docker-php-ext-enable xdebug; \
-    echo "xdebug.mode=coverage" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini;
-
 # Install imagick extension (workaround)
 ARG IMAGICK_VERSION=3.8.0
 #    && pecl install imagick-"$IMAGICK_VERSION" \
