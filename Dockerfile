@@ -10,7 +10,7 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install libapache2-mod-xsendfile -y && a2enmod xsendfile
 RUN a2enmod rewrite
-RUN apt-get install tree nano libzip-dev libwebp-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev zlib1g-dev libicu-dev libwebp-dev -y
+RUN apt-get install unzip tree nano libzip-dev libwebp-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev zlib1g-dev libicu-dev libwebp-dev -y
 RUN apt-get install npm -y
 
 RUN docker-php-ext-install pdo_mysql \
