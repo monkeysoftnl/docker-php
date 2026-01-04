@@ -24,8 +24,8 @@ RUN docker-php-ext-install pdo_mysql \
   && docker-php-ext-install intl \
   && docker-php-ext-install pcntl
 
-# Set the correct permissions for the application files
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
 RUN chown -R www-data:www-data /var/www
 
-# Set Default User for Apache
 USER www-data
