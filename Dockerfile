@@ -10,8 +10,11 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install libapache2-mod-xsendfile -y && a2enmod xsendfile
 RUN a2enmod rewrite
-RUN apt-get install tree nano libzip-dev libwebp-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev zlib1g-dev libicu-dev libwebp-dev libpq-dev postgresql-client -y
-RUN apt-get install npm -y
+RUN apt-get install tree nano libzip-dev libwebp-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev zlib1g-dev libicu-dev libwebp-dev libpq-dev postgresql-client curl ca-certificates -y
+
+# Install latest Node.js LTS via NodeSource
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+  && apt-get install -y nodejs
 
 RUN docker-php-ext-configure gd --with-webp --with-freetype --with-jpeg;
 
