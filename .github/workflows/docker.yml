@@ -53,3 +53,5 @@ jobs:
           tags: |
             monkeysoft/php:latest-apache
             ghcr.io/monkeysoftnl/docker-php:latest-apache
+            monkeysoft/php:8.5-apache
+            ghcr.io/monkeysoftnl/docker-php:8.5-apache
