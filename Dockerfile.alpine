@@ -1,5 +1,12 @@
 FROM php:8.5-fpm-alpine
 
+# Align www-data with Debian/Ubuntu (33:33); Alpine default is 82:82 and 33 is taken by xfs
+RUN deluser www-data \
+  && (deluser xfs || true) \
+  && (delgroup xfs || true) \
+  && addgroup -g 33 -S www-data \
+  && adduser -u 33 -S -D -h /var/www -s /sbin/nologin -G www-data www-data
+
 COPY ./.docker/nginx/default.conf /etc/nginx/http.d/default.conf
 COPY ./.docker/supervisord.conf /etc/supervisord.conf
 COPY ./.docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
