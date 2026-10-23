@@ -1,0 +1,38 @@
+{
+	# TLS is terminated by the reverse proxy (NPM)
+	auto_https off
+	admin off
+
+	servers {
+		trusted_proxies static private_ranges
+		client_ip_headers X-Forwarded-For
+	}
+
+	frankenphp
+}
+
+:80 {
+	root * /var/www/html/public
+
+	request_body {
+		max_size 100MB
+	}
+
+	log {
+		output stdout
+		format console
+	}
+
+	encode zstd gzip
+
+	@dotfiles {
+		path_regexp dotfiles ^/\.
+		not path /.well-known/*
+	}
+	respond @dotfiles 403
+
+	php_server {
+		# REMOTE_ADDR = real client (via trusted X-Forwarded-For)
+		env REMOTE_ADDR {client_ip}
+	}
+}

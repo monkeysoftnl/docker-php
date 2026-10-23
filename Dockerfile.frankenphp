@@ -1,0 +1,22 @@
+FROM dunglas/frankenphp:php8.5-alpine
+
+COPY ./.docker/frankenphp/Caddyfile /etc/frankenphp/Caddyfile
+COPY ./.docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+RUN apk add --no-cache tree nano unzip curl ca-certificates nodejs npm postgresql-client libcap
+
+RUN install-php-extensions pdo_mysql mysqli zip exif gd bcmath intl pdo_pgsql pgsql pcntl redis imagick opcache
+
+# Allow running as non-root on port 80
+RUN setcap cap_net_bind_service=+ep /usr/local/bin/frankenphp \
+  && mkdir -p /var/www/html/public \
+  && chown -R www-data:www-data /data/caddy /config/caddy /var/www
+
+WORKDIR /var/www/html
+
+EXPOSE 80
+
+# Set Default User
+USER www-data

@@ -53,3 +53,25 @@ jobs:
           tags: |
             monkeysoft/php:latest-apache
             ghcr.io/monkeysoftnl/docker-php:latest-apache
+
+      - name: 'Build and push Docker image (Alpine)'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.alpine
+          platforms: linux/arm64, linux/amd64
+          push: true
+          tags: |
+            monkeysoft/php:latest-alpine
+            ghcr.io/monkeysoftnl/docker-php:latest-alpine
+
+      - name: 'Build and push Docker image (FrankenPHP)'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.frankenphp
+          platforms: linux/arm64, linux/amd64
+          push: true
+          tags: |
+            monkeysoft/php:latest-frankenphp
+            ghcr.io/monkeysoftnl/docker-php:latest-frankenphp
