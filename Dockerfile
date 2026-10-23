@@ -10,8 +10,11 @@ ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install libapache2-mod-xsendfile -y && a2enmod xsendfile
 RUN a2enmod rewrite
-RUN apt-get install tree nano libzip-dev libwebp-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev zlib1g-dev libicu-dev unzip libmagickwand-dev imagemagick -y
-RUN apt-get install npm -y
+RUN apt-get install tree nano libzip-dev libwebp-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev zlib1g-dev libicu-dev unzip libmagickwand-dev imagemagick libpq-dev postgresql-client curl ca-certificates -y
+
+# Install latest Node.js LTS via NodeSource (includes npm)
+RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
+  && apt-get install -y nodejs
 
 RUN docker-php-ext-configure gd --with-webp --with-freetype --with-jpeg;
 
@@ -22,7 +25,11 @@ RUN docker-php-ext-install pdo_mysql \
   && docker-php-ext-install gd \
   && docker-php-ext-install bcmath \
   && docker-php-ext-install intl \
-  && docker-php-ext-install pcntl
+  && docker-php-ext-install pdo_pgsql \
+  && docker-php-ext-install pgsql \
+  && docker-php-ext-install pcntl \
+  && pecl install redis \
+  && docker-php-ext-enable redis
 
 RUN pecl install imagick && docker-php-ext-enable imagick
 
