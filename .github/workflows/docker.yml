@@ -73,3 +73,25 @@ jobs:
           tags: |
             monkeysoft/php:latest-frankenphp
             ghcr.io/monkeysoftnl/docker-php:latest-frankenphp
+
+      - name: 'Build and push Docker image (PHP-FPM)'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.fpm
+          platforms: linux/arm64, linux/amd64
+          push: true
+          tags: |
+            monkeysoft/php:latest-fpm
+            ghcr.io/monkeysoftnl/docker-php:latest-fpm
+
+      - name: 'Build and push Docker image (nginx)'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.nginx
+          platforms: linux/arm64, linux/amd64
+          push: true
+          tags: |
+            monkeysoft/php:latest-nginx
+            ghcr.io/monkeysoftnl/docker-php:latest-nginx

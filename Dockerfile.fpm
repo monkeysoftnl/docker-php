@@ -1,0 +1,38 @@
+FROM php:8.5-fpm-alpine
+
+# Align www-data with Debian/Ubuntu (33:33); Alpine default is 82:82 and 33 is taken by xfs
+RUN deluser www-data \
+  && (deluser xfs || true) \
+  && (delgroup xfs || true) \
+  && addgroup -g 33 -S www-data \
+  && adduser -u 33 -S -D -h /var/www -s /sbin/nologin -G www-data www-data
+
+COPY ./.docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+RUN apk add --no-cache \
+    tree nano unzip curl ca-certificates \
+    nodejs npm postgresql-client \
+    libzip libwebp freetype libjpeg-turbo libpng icu-libs libpq imagemagick
+
+RUN apk add --no-cache --virtual .build-deps \
+    $PHPIZE_DEPS libzip-dev libwebp-dev freetype-dev libjpeg-turbo-dev libpng-dev \
+    icu-dev postgresql-dev imagemagick-dev \
+  && docker-php-ext-configure gd --with-webp --with-freetype --with-jpeg \
+  && docker-php-ext-install pdo_mysql mysqli zip exif gd bcmath intl pdo_pgsql pgsql pcntl \
+  && pecl install redis imagick \
+  && docker-php-ext-enable redis imagick \
+  && apk del .build-deps \
+  && rm -rf /tmp/pear
+
+# Set the correct permissions for the application files
+RUN mkdir -p /var/www/html/public && chown -R www-data:www-data /var/www
+
+WORKDIR /var/www/html
+
+# php-fpm only; pair with the nginx image (latest-nginx) via FastCGI
+EXPOSE 9000
+
+# fpm master runs as root, workers as www-data
+CMD ["php-fpm"]

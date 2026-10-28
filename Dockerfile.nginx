@@ -1,0 +1,24 @@
+FROM nginx:alpine
+
+# Align www-data with Debian/Ubuntu (33:33) so shared volumes have matching ownership
+RUN (deluser www-data || true) \
+  && (delgroup www-data || true) \
+  && (deluser xfs || true) \
+  && (delgroup xfs || true) \
+  && addgroup -g 33 -S www-data \
+  && adduser -u 33 -S -D -h /var/www -s /sbin/nologin -G www-data www-data \
+  && sed -i 's/^user .*/user www-data;/' /etc/nginx/nginx.conf \
+  && grep -q '^user www-data;' /etc/nginx/nginx.conf
+
+# Rendered with envsubst into /etc/nginx/conf.d/default.conf on container start
+COPY ./.docker/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+
+# Where the php-fpm container (latest-fpm) can be reached
+ENV FPM_HOST=php \
+    FPM_PORT=9000
+
+RUN mkdir -p /var/www/html/public && chown -R www-data:www-data /var/www
+
+WORKDIR /var/www/html
+
+EXPOSE 80

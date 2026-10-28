@@ -3,7 +3,7 @@
 # Build and push the multi-arch PHP images to Docker Hub and GHCR.
 # Mirrors .github/workflows/docker.yml.
 #
-# Usage: ./build.sh [apache|alpine|frankenphp ...]   (default: all)
+# Usage: ./build.sh [apache|alpine|frankenphp|fpm|nginx ...]   (default: all)
 # Env:   PLATFORMS=linux/arm64,linux/amd64  NO_PUSH=1  NO_CACHE=1
 
 set -euo pipefail
@@ -20,15 +20,17 @@ dockerfile_for() {
     apache) echo Dockerfile ;;
     alpine) echo Dockerfile.alpine ;;
     frankenphp) echo Dockerfile.frankenphp ;;
+    fpm) echo Dockerfile.fpm ;;
+    nginx) echo Dockerfile.nginx ;;
     *) return 1 ;;
   esac
 }
 
 variants=("$@")
-[[ ${#variants[@]} -eq 0 ]] && variants=(apache alpine frankenphp)
+[[ ${#variants[@]} -eq 0 ]] && variants=(apache alpine frankenphp fpm nginx)
 
 for v in "${variants[@]}"; do
-  dockerfile_for "$v" >/dev/null || { echo "Unknown variant: $v (use apache|alpine|frankenphp)" >&2; exit 1; }
+  dockerfile_for "$v" >/dev/null || { echo "Unknown variant: $v (use apache|alpine|frankenphp|fpm|nginx)" >&2; exit 1; }
 done
 
 # Multi-arch builds need a docker-container builder (default driver can't do it).
