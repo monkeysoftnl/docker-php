@@ -4,7 +4,7 @@
 # Mirrors .github/workflows/docker.yml.
 #
 # Usage: ./build.sh [apache|alpine|frankenphp|fpm|nginx ...]   (default: all)
-# Env:   PLATFORMS=linux/arm64,linux/amd64  NO_PUSH=1  NO_CACHE=1
+# Env:   PLATFORMS=linux/arm64,linux/amd64  NO_PUSH=1  USE_CACHE=1 (cache off by default)
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -48,10 +48,10 @@ for v in "${variants[@]}"; do
     --builder "$BUILDER"
     --platform "$PLATFORMS"
     --file "$(dockerfile_for "$v")"
-    --tag "$DOCKERHUB_REPO:latest-$v"
-    --tag "$GHCR_REPO:latest-$v"
+    --tag "$DOCKERHUB_REPO:8.5-$v"
+    --tag "$GHCR_REPO:8.5-$v"
   )
-  [[ -n "${NO_CACHE:-}" ]] && args+=(--no-cache)
+  [[ -z "${USE_CACHE:-}" ]] && args+=(--no-cache)
   if [[ -n "${NO_PUSH:-}" ]]; then
     # Multi-arch images can't be loaded locally; just verify the build.
     args+=(--output type=cacheonly)
