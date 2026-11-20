@@ -1,4 +1,5 @@
-FROM php:8.5-apache
+ARG PHP_VERSION=8.5
+FROM php:${PHP_VERSION}-apache
 
 COPY ./.docker/apache/000-default.conf /etc/apache2/sites-available/000-default.conf
 COPY ./.docker/php/local.ini /usr/local/etc/php/conf.d/local.ini

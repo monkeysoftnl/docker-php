@@ -1,4 +1,5 @@
-FROM dunglas/frankenphp:php8.5-alpine
+ARG PHP_VERSION=8.5
+FROM dunglas/frankenphp:php${PHP_VERSION}-alpine
 
 # Align www-data with Debian/Ubuntu (33:33); Alpine default is 82:82 and 33 is taken by xfs
 RUN deluser www-data \

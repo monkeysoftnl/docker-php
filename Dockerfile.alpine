@@ -1,4 +1,5 @@
-FROM php:8.5-fpm-alpine
+ARG PHP_VERSION=8.5
+FROM php:${PHP_VERSION}-fpm-alpine
 
 # Align www-data with Debian/Ubuntu (33:33); Alpine default is 82:82 and 33 is taken by xfs
 RUN deluser www-data \
