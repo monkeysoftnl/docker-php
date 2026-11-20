@@ -1,7 +1,8 @@
 FROM nginx:alpine
 
 # Align www-data with Debian/Ubuntu (33:33) so shared volumes have matching ownership
-RUN (deluser www-data || true) \
+RUN apk upgrade --no-cache \
+  && (deluser www-data || true) \
   && (delgroup www-data || true) \
   && (deluser xfs || true) \
   && (delgroup xfs || true) \

@@ -14,7 +14,8 @@ COPY ./.docker/php/local.ini /usr/local/etc/php/conf.d/local.ini
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-RUN apk add --no-cache \
+RUN apk upgrade --no-cache \
+  && apk add --no-cache \
     nginx supervisor tree nano unzip curl ca-certificates \
     nodejs npm postgresql-client \
     libzip libwebp freetype libjpeg-turbo libpng icu-libs libpq imagemagick \
@@ -28,8 +29,9 @@ RUN apk add --no-cache --virtual .build-deps \
   && docker-php-ext-install pdo_mysql mysqli zip exif gd bcmath intl pdo_pgsql pgsql pcntl \
   && pecl install redis imagick \
   && docker-php-ext-enable redis imagick \
+  && find /usr/local/lib/php/extensions -name '*.so' -exec strip --strip-unneeded {} + \
   && apk del .build-deps \
-  && rm -rf /tmp/pear
+  && rm -rf /tmp/* /usr/local/lib/php/test
 
 # Set the correct permissions for the application files
 RUN mkdir -p /var/www/html/public && chown -R www-data:www-data /var/www

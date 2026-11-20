@@ -1,0 +1,9 @@
+.git
+.github
+.claude
+.dockerignore
+Dockerfile*
+build.sh
+README.md
+LICENSE
+__queuestorage__

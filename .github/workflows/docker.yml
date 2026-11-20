@@ -6,17 +6,38 @@ on:
     branches:
       - main
 
+env:
+  DOCKERHUB_REPO: monkeysoft/php
+  GHCR_REPO: ghcr.io/monkeysoftnl/docker-php
+  # Version that additionally keeps the legacy latest-<variant> tags
+  LATEST_VERSION: '8.5'
+
 jobs:
-  build_docker_images:
-    # Job name that shows in the GitHub UI
-    name: 'Build Docker Images'
-    # Runner to use
+  build_php_images:
+    name: 'PHP ${{ matrix.php }} ${{ matrix.variant }}'
     runs-on: ubuntu-latest
-    # Permissions for the job
     permissions:
       contents: read
       packages: write
       id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5', '8.6']
+        variant: [apache, alpine, fpm, frankenphp]
+        include:
+          - variant: apache
+            file: Dockerfile
+            base: 'php:{0}-apache'
+          - variant: alpine
+            file: Dockerfile.alpine
+            base: 'php:{0}-fpm-alpine'
+          - variant: fpm
+            file: Dockerfile.fpm
+            base: 'php:{0}-fpm-alpine'
+          - variant: frankenphp
+            file: Dockerfile.frankenphp
+            base: 'dunglas/frankenphp:php{0}-alpine'
 
     steps:
       - name: 'Checkout'
@@ -41,53 +62,78 @@ jobs:
       - name: 'Set up Docker Buildx'
         uses: docker/setup-buildx-action@v4
 
+      # Versions without an upstream image yet (e.g. 8.6) are skipped, not failed.
+      - name: 'Check base image exists'
+        id: base
+        run: |
+          base="${{ format(matrix.base, matrix.php) }}"
+          if docker buildx imagetools inspect "$base" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Base image $base not found, skipping ${{ matrix.php }}-${{ matrix.variant }}"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 'Compute tags'
+        if: steps.base.outputs.exists == 'true'
+        id: tags
+        run: |
+          tags="${DOCKERHUB_REPO}:${{ matrix.php }}-${{ matrix.variant }}
+          ${GHCR_REPO}:${{ matrix.php }}-${{ matrix.variant }}"
+          if [ "${{ matrix.php }}" = "${LATEST_VERSION}" ]; then
+            tags="$tags
+          ${DOCKERHUB_REPO}:latest-${{ matrix.variant }}
+          ${GHCR_REPO}:latest-${{ matrix.variant }}"
+          fi
+          {
+            echo "tags<<EOF"
+            echo "$tags" | sed 's/^ *//'
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: 'Build and push Docker image'
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/arm64, linux/amd64
-          push: true
-          no-cache: true
-          tags: |
-            monkeysoft/php:latest-apache
-            ghcr.io/monkeysoftnl/docker-php:latest-apache
-
-      - name: 'Build and push Docker image (Alpine)'
+        if: steps.base.outputs.exists == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile.alpine
+          file: ./${{ matrix.file }}
+          build-args: |
+            PHP_VERSION=${{ matrix.php }}
           platforms: linux/arm64, linux/amd64
           push: true
           no-cache: true
-          tags: |
-            monkeysoft/php:latest-alpine
-            ghcr.io/monkeysoftnl/docker-php:latest-alpine
+          tags: ${{ steps.tags.outputs.tags }}
 
-      - name: 'Build and push Docker image (FrankenPHP)'
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile.frankenphp
-          platforms: linux/arm64, linux/amd64
-          push: true
-          no-cache: true
-          tags: |
-            monkeysoft/php:latest-frankenphp
-            ghcr.io/monkeysoftnl/docker-php:latest-frankenphp
+  # nginx has no PHP: build once, tag per PHP version
+  build_nginx_image:
+    name: 'nginx'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
 
-      - name: 'Build and push Docker image (PHP-FPM)'
-        uses: docker/build-push-action@v6
+      - name: 'Login to DockerHub Container Registry'
+        uses: docker/login-action@v4
         with:
-          context: .
-          file: ./Dockerfile.fpm
-          platforms: linux/arm64, linux/amd64
-          push: true
-          no-cache: true
-          tags: |
-            monkeysoft/php:latest-fpm
-            ghcr.io/monkeysoftnl/docker-php:latest-fpm
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Set up QEMU'
+        uses: docker/setup-qemu-action@v4
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v4
 
       - name: 'Build and push Docker image (nginx)'
         uses: docker/build-push-action@v6
@@ -98,5 +144,11 @@ jobs:
           push: true
           no-cache: true
           tags: |
+            monkeysoft/php:8.4-nginx
+            monkeysoft/php:8.5-nginx
+            monkeysoft/php:8.6-nginx
             monkeysoft/php:latest-nginx
+            ghcr.io/monkeysoftnl/docker-php:8.4-nginx
+            ghcr.io/monkeysoftnl/docker-php:8.5-nginx
+            ghcr.io/monkeysoftnl/docker-php:8.6-nginx
             ghcr.io/monkeysoftnl/docker-php:latest-nginx
